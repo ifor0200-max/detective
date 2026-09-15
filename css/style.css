@@ -1,0 +1,261 @@
+:root {
+  --bg: #14151a;
+  --bg-panel: #1c1e26;
+  --bg-card: #21232d;
+  --border: #33374a;
+  --text: #e8e6df;
+  --text-muted: #9a9db0;
+  --accent: #c9a35c;
+  --accent-soft: rgba(201, 163, 92, 0.15);
+  --radius: 10px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  line-height: 1.5;
+}
+
+.site-header {
+  padding: 32px 24px 16px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+}
+
+.site-header h1 {
+  margin: 0 0 6px;
+  font-size: 1.9rem;
+  letter-spacing: 0.02em;
+  color: var(--accent);
+}
+
+.subtitle {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+main {
+  max-width: none;
+  width: 100%;
+  margin: 0 auto;
+  padding: 24px 32px 40px;
+}
+
+.filters {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 28px;
+}
+
+.filter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field label {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.field input,
+.field select {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 9px 10px;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.field input:focus,
+.field select:focus {
+  border-color: var(--accent);
+}
+
+.range-inputs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.range-inputs input {
+  width: 100%;
+  min-width: 0;
+}
+
+.range-dash {
+  color: var(--text-muted);
+}
+
+.filter-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+#reset-btn {
+  background: transparent;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+#reset-btn:hover {
+  background: var(--accent-soft);
+}
+
+.results-count {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.results {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 12px;
+}
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+}
+
+.card-photo {
+  width: 130px;
+  height: 176px;
+  flex: 0 0 130px;
+  object-fit: cover;
+  background: #0f1015;
+  display: block;
+}
+
+.card-photo--placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  text-align: center;
+  padding: 0 6px;
+}
+
+.card-body {
+  flex: 1;
+  min-width: 0;
+  padding: 2px 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.card-fields {
+  margin: 0;
+  display: table;
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.card-fields > div {
+  display: table-row;
+}
+
+.card-fields > div:not(:last-child) dt,
+.card-fields > div:not(:last-child) dd {
+  border-bottom: 1px solid var(--border);
+}
+
+.card-fields dt {
+  display: table-cell;
+  width: 1%;
+  white-space: nowrap;
+  padding: 3px 8px 3px 0;
+  font-size: 0.64rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--text-muted);
+  font-weight: 600;
+  vertical-align: middle;
+}
+
+.card-fields dd {
+  display: table-cell;
+  padding: 3px 0;
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--text);
+  overflow-wrap: break-word;
+  vertical-align: middle;
+  line-height: 1.25;
+}
+
+.card-fields > div:first-child dd {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.empty-state {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 40px 0;
+  font-size: 1rem;
+}
+
+.site-footer {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  padding: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.site-footer code {
+  background: var(--bg-panel);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+@media (max-width: 480px) {
+  .filter-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
