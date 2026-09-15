@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Поиск персонажей</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <h1>Поиск персонажей</h1>
+  <p class="subtitle">Выберите параметры — список обновится автоматически</p>
+</header>
+
+<main>
+  <section class="filters" aria-label="Фильтры поиска">
+    <div class="filter-grid">
+
+      <div class="field">
+        <label for="f-name">Имя</label>
+        <input type="text" id="f-name" placeholder="Например, Принц">
+      </div>
+
+      <div class="field">
+        <label for="f-family">Семья</label>
+        <select id="f-family">
+          <option value="">Любая</option>
+        </select>
+      </div>
+
+      <div class="field field-range">
+        <label>Возраст</label>
+        <div class="range-inputs">
+          <input type="number" id="f-age-min" placeholder="от" min="0">
+          <span class="range-dash">—</span>
+          <input type="number" id="f-age-max" placeholder="до" min="0">
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="f-status">Статус</label>
+        <select id="f-status">
+          <option value="">Любой</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="f-activity">Активность</label>
+        <select id="f-activity">
+          <option value="">Любая</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="f-power">БУ</label>
+        <select id="f-power">
+          <option value="">Любой</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="f-position">Должность</label>
+        <select id="f-position">
+          <option value="">Любая</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="f-gender">Пол</label>
+        <select id="f-gender">
+          <option value="">Любой</option>
+        </select>
+      </div>
+
+    </div>
+
+    <div class="filter-actions">
+      <button type="button" id="reset-btn">Сбросить фильтры</button>
+      <span id="results-count" class="results-count"></span>
+    </div>
+  </section>
+
+  <section class="results" id="results" aria-label="Результаты поиска">
+    <!-- карточки персонажей вставляются сюда через JS -->
+  </section>
+
+  <p id="empty-state" class="empty-state" hidden>Персонажи по заданным параметрам не найдены.</p>
+</main>
+
+<footer class="site-footer">
+  <p>Чтобы добавить нового персонажа, отредактируйте файл <code>js/data.js</code>
+  или воспользуйтесь редактором <code>tools/editor.html</code>.</p>
+</footer>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

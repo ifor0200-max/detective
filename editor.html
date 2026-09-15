@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Редактор базы персонажей</title>
+<style>
+  :root {
+    --bg: #14151a;
+    --bg-panel: #1c1e26;
+    --bg-card: #21232d;
+    --border: #33374a;
+    --text: #e8e6df;
+    --text-muted: #9a9db0;
+    --accent: #c9a35c;
+    --accent-soft: rgba(201, 163, 92, 0.15);
+    --ok: #7fb87f;
+    --warn: #d98c4a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.5;
+    padding: 24px 32px 60px;
+  }
+  h1 { color: var(--accent); font-size: 1.6rem; margin: 0 0 4px; }
+  .subtitle { color: var(--text-muted); margin: 0 0 24px; font-size: 0.92rem; }
+  h2 { font-size: 1.05rem; color: var(--accent); margin: 0 0 12px; }
+  .panel {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin-bottom: 22px;
+  }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  .field { display: flex; flex-direction: column; gap: 4px; min-width: 160px; flex: 1; }
+  .field.grow2 { flex: 2; }
+  .field label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em; }
+  input, select, textarea, button {
+    font-family: inherit;
+    font-size: 0.92rem;
+  }
+  input, select, textarea {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 6px;
+    padding: 8px 10px;
+    outline: none;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+  textarea { width: 100%; resize: vertical; font-family: ui-monospace, Consolas, monospace; font-size: 0.82rem; }
+  button {
+    background: transparent;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    border-radius: 6px;
+    padding: 9px 16px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+  button:hover { background: var(--accent-soft); }
+  button.primary { background: var(--accent); color: #1a1a1a; font-weight: 600; }
+  button.primary:hover { background: #d9b26e; }
+  button.danger { border-color: #c25b5b; color: #e08787; }
+  button.danger:hover { background: rgba(194,91,91,0.15); }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  .file-btn { display: inline-block; }
+  .form-actions { margin-top: 14px; display: flex; gap: 10px; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--border); }
+  th { color: var(--text-muted); font-weight: 600; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.03em; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+  td.actions { white-space: nowrap; }
+  td.actions button { padding: 4px 10px; font-size: 0.78rem; margin-right: 4px; }
+  .table-wrap { max-height: 480px; overflow: auto; border: 1px solid var(--border); border-radius: 8px; }
+  .table-wrap table { border: none; }
+  .muted { color: var(--text-muted); font-size: 0.85rem; }
+  .count-badge {
+    display: inline-block; background: var(--accent-soft); color: var(--accent);
+    border-radius: 999px; padding: 2px 10px; font-size: 0.8rem; margin-left: 8px;
+  }
+  .log {
+    max-height: 220px; overflow: auto; font-size: 0.82rem;
+    background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+    padding: 10px 12px; margin-top: 12px; white-space: pre-wrap;
+  }
+  .log .ok { color: var(--ok); }
+  .log .warn { color: var(--warn); }
+  .toolbar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
+  .hint { font-size: 0.78rem; color: var(--text-muted); margin-top: 6px; }
+  .search-box { max-width: 260px; }
+</style>
+</head>
+<body>
+
+<h1>Редактор базы персонажей</h1>
+<p class="subtitle">Локальный офлайн-инструмент для удобного заполнения <code>js/data.js</code>. Работает прямо в браузере, ничего никуда не отправляет.</p>
+
+<section class="panel">
+  <h2>1. Загрузка</h2>
+  <div class="row">
+    <button id="load-btn">Загрузить существующий data.js</button>
+    <input type="file" id="load-input" accept=".js,text/javascript" style="display:none">
+    <button id="new-btn">Начать с пустого списка</button>
+    <span id="load-status" class="muted"></span>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="toolbar">
+    <h2 style="margin:0">2. Персонажи <span class="count-badge" id="count-badge">0</span></h2>
+    <input type="text" id="search-box" class="search-box" placeholder="Поиск по имени...">
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Имя</th><th>ID</th><th>Возраст</th><th>Семья</th><th>Должность</th><th>Пол</th><th></th>
+        </tr>
+      </thead>
+      <tbody id="table-body"></tbody>
+    </table>
+  </div>
+</section>
+
+<section class="panel">
+  <h2 id="form-title">3. Добавить персонажа</h2>
+  <div class="row">
+    <div class="field">
+      <label>ID (айди игрока)</label>
+      <input type="text" id="f-id" placeholder="напр. 205834">
+    </div>
+    <div class="field grow2">
+      <label>Имя</label>
+      <input type="text" id="f-name" placeholder="Имя персонажа">
+    </div>
+    <div class="field">
+      <label>Возраст</label>
+      <input type="number" step="0.1" id="f-age">
+    </div>
+  </div>
+  <div class="row" style="margin-top:10px">
+    <div class="field">
+      <label>Статус</label>
+      <input type="text" id="f-status" list="status-options" placeholder="напр. не перерожден">
+      <datalist id="status-options"></datalist>
+    </div>
+    <div class="field">
+      <label>Активность</label>
+      <select id="f-activity"></select>
+    </div>
+    <div class="field">
+      <label>БУ</label>
+      <select id="f-power"></select>
+    </div>
+  </div>
+  <div class="row" style="margin-top:10px">
+    <div class="field">
+      <label>Семья</label>
+      <select id="f-family"></select>
+    </div>
+    <div class="field">
+      <label>Должность</label>
+      <select id="f-position"></select>
+    </div>
+    <div class="field">
+      <label>Пол</label>
+      <select id="f-gender"></select>
+    </div>
+  </div>
+  <div class="row" style="margin-top:10px">
+    <div class="field grow2">
+      <label>Фото (ручное переопределение, необязательно)</label>
+      <input type="text" id="f-photo" placeholder="images/имя-файла.jpg или https://...">
+    </div>
+  </div>
+  <p class="hint">Фото обычно подбирается автоматически по ID — файл <code>images/&lt;id&gt;.jpg</code>. Это поле нужно только для персонажей без ID или для замены картинки вручную.</p>
+  <div class="form-actions">
+    <button class="primary" id="save-btn">Добавить персонажа</button>
+    <button id="cancel-edit-btn" style="display:none">Отменить редактирование</button>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>4. Массовый импорт (вставить текстом)</h2>
+  <p class="hint">Вставьте один или несколько персонажей в привычном формате (каждая строка "Поле: значение", персонажи подряд) — так же, как вы присылаете их в чат. Значения активности/БУ/должности/пола будут автоматически сопоставлены со списком допустимых — что не распознано, получит «-».</p>
+  <textarea id="bulk-input" rows="10" placeholder="Имя: Порочный Принц&#10;Возраст: 41&#10;Статус: не перерожден&#10;Активность: частичка игровой&#10;Сила: идеальная&#10;Должность: Старший семьи Крэндалл&#10;Пол: Кот"></textarea>
+  <div class="form-actions">
+    <button class="primary" id="bulk-parse-btn">Разобрать и добавить</button>
+    <button id="bulk-clear-btn">Очистить поле</button>
+  </div>
+  <div class="log" id="bulk-log" style="display:none"></div>
+</section>
+
+<section class="panel">
+  <h2>5. Экспорт</h2>
+  <div class="row">
+    <button class="primary" id="export-btn">Скачать data.js</button>
+    <span class="muted">Заменит файл <code>js/data.js</code> в вашем проекте — просто перезапишите его этим файлом и загрузите на GitHub.</span>
+  </div>
+</section>
+
+<script>
+// ============================================================
+// Допустимые значения — те же списки, что и в js/app.js основного сайта
+// ============================================================
+const FIXED_OPTIONS = {
+  family: ["Аллен", "Крэндалл", "Вурхиз"],
+  activity: [
+    "Сверхидеальная", "Идеальная", "Хранитель Игровой", "Частичка Игровой",
+    "Император Игровой", "Ходячий миф", "Легенда сайта", "Любимый кот",
+    "Замечательнейшая", "Замечательная", "Улучшающаяся", "Положительная",
+    "Переходная", "Отрицательная", "Ухудшающаяся", "Ужасная", "Ужаснейшая",
+    "Забытый кот", "Забывший про игру", "Покинувший игру",
+    "Подлежащий удалению", "Пустое место"
+  ],
+  power: [
+    "Блоха", "Котёночек", "Задира", "Гроза детской", "Страх барсуков",
+    "Победитель псов", "Защитник племени", "Великий воин",
+    "Достоин Львиного племени", "Идеальная"
+  ],
+  position: [
+    "Старший семьи Крэндалл", "Старший семьи Аллен", "Старший семьи Вурхиз",
+    "Питомец семьи Крэндалл", "Питомец семьи Аллен", "Питомец семьи Вурхиз",
+    "Котенок"
+  ],
+  gender: ["Кот", "Кошка"]
+};
+
+// Синонимы / опечатки -> каноническое значение. Ключи в нижнем регистре.
+const SYNONYMS = {
+  activity: {
+    "исператор игровой": "Император Игровой",
+    "император игровой": "Император Игровой",
+    "хранитель игровой": "Хранитель Игровой",
+    "частичка игровой": "Частичка Игровой",
+    "ходячий миф": "Ходячий миф",
+    "легенда сайта": "Легенда сайта",
+    "любимый кот": "Любимый кот",
+    "замечательнейшая": "Замечательнейшая",
+    "замечательная": "Замечательная",
+    "улучшающаяся": "Улучшающаяся",
+    "положительная": "Положительная",
+    "переходная": "Переходная",
+    "отрицательная": "Отрицательная",
+    "ухудшающаяся": "Ухудшающаяся",
+    "ужасная": "Ужасная",
+    "ужаснейшая": "Ужаснейшая",
+    "забытый кот": "Забытый кот",
+    "забывший про игру": "Забывший про игру",
+    "покинувший игру": "Покинувший игру",
+    "подлежащий удалению": "Подлежащий удалению",
+    "пустое место": "Пустое место",
+    "сверхидеальная": "Сверхидеальная",
+    "идеальная": "Идеальная"
+  },
+  power: {
+    "блоха": "Блоха",
+    "котёночек": "Котёночек",
+    "котеночек": "Котёночек",
+    "котёнок": "Котёночек",
+    "котенок": "Котёночек",
+    "задира": "Задира",
+    "гроза детской": "Гроза детской",
+    "страх барсуков": "Страх барсуков",
+    "победитель псов": "Победитель псов",
+    "поюедитель псов": "Победитель псов",
+    "защитник племени": "Защитник племени",
+    "чащитник племени": "Защитник племени",
+    "великий воин": "Великий воин",
+    "достоин львиного племени": "Достоин Львиного племени",
+    "идеальная": "Идеальная",
+    "идеяльная": "Идеальная"
+  },
+  position: {
+    "старший семьи крэндалл": "Старший семьи Крэндалл",
+    "старший семьи аллен": "Старший семьи Аллен",
+    "старший семьи вурхиз": "Старший семьи Вурхиз",
+    "питомец семьи крэндалл": "Питомец семьи Крэндалл",
+    "питомец семьи аллен": "Питомец семьи Аллен",
+    "питомец семьи вурхиз": "Питомец семьи Вурхиз",
+    "котенок": "Котенок",
+    "котёнок": "Котенок"
+  },
+  gender: {
+    "кот": "Кот",
+    "кошка": "Кошка",
+    "кока": "Кошка"
+  },
+  family: {
+    "крэндалл": "Крэндалл",
+    "аллен": "Аллен",
+    "вурхиз": "Вурхиз"
+  }
+};
+
+function resolveEnum(kind, raw) {
+  const key = (raw || "").trim().toLowerCase();
+  if (!key) return "-";
+  return SYNONYMS[kind][key] || "-";
+}
+
+// ============================================================
+// Состояние
+// ============================================================
+let characters = [];
+let editingIndex = null; // null = режим добавления, число = редактирование записи
+
+const els = {};
+["f-id","f-name","f-age","f-status","f-activity","f-power","f-family","f-position","f-gender","f-photo"]
+  .forEach(id => { els[id] = document.getElementById(id); });
+
+function fillSelect(el, values, withEmpty) {
+  el.innerHTML = "";
+  if (withEmpty) {
+    const opt = document.createElement("option");
+    opt.value = "-"; opt.textContent = "- (не указано)";
+    el.appendChild(opt);
+  }
+  values.forEach(v => {
+    const opt = document.createElement("option");
+    opt.value = v; opt.textContent = v;
+    el.appendChild(opt);
+  });
+}
+
+fillSelect(els["f-activity"], FIXED_OPTIONS.activity, true);
+fillSelect(els["f-power"], FIXED_OPTIONS.power, true);
+fillSelect(els["f-family"], FIXED_OPTIONS.family, true);
+fillSelect(els["f-position"], FIXED_OPTIONS.position, true);
+fillSelect(els["f-gender"], FIXED_OPTIONS.gender, true);
+
+function refreshStatusDatalist() {
+  const dl = document.getElementById("status-options");
+  const values = [...new Set(characters.map(c => c.status).filter(v => v && v !== "-"))];
+  dl.innerHTML = values.map(v => `<option value="${escapeAttr(v)}">`).join("");
+}
+
+function escapeAttr(s) {
+  return (s || "").replace(/&/g,"&amp;").replace(/"/g,"&quot;");
+}
+function escapeHtml(s) {
+  const d = document.createElement("div");
+  d.textContent = s == null ? "" : String(s);
+  return d.innerHTML;
+}
+
+// ============================================================
+// Таблица
+// ============================================================
+function renderTable() {
+  const body = document.getElementById("table-body");
+  const q = document.getElementById("search-box").value.trim().toLowerCase();
+  body.innerHTML = "";
+
+  characters.forEach((c, i) => {
+    if (q && !(c.name || "").toLowerCase().includes(q)) return;
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${escapeHtml(c.name)}</td>
+      <td>${escapeHtml(c.id)}</td>
+      <td>${escapeHtml(c.age)}</td>
+      <td>${escapeHtml(c.family)}</td>
+      <td>${escapeHtml(c.position)}</td>
+      <td>${escapeHtml(c.gender)}</td>
+      <td class="actions">
+        <button data-action="edit" data-index="${i}">Изменить</button>
+        <button class="danger" data-action="delete" data-index="${i}">Удалить</button>
+      </td>
+    `;
+    body.appendChild(tr);
+  });
+
+  document.getElementById("count-badge").textContent = characters.length;
+  refreshStatusDatalist();
+}
+
+document.getElementById("table-body").addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-action]");
+  if (!btn) return;
+  const index = Number(btn.dataset.index);
+  if (btn.dataset.action === "edit") startEdit(index);
+  if (btn.dataset.action === "delete") {
+    if (confirm(`Удалить "${characters[index].name}"?`)) {
+      characters.splice(index, 1);
+      renderTable();
+    }
+  }
+});
+
+document.getElementById("search-box").addEventListener("input", renderTable);
+
+// ============================================================
+// Форма добавления / редактирования
+// ============================================================
+function resetForm() {
+  els["f-id"].value = "";
+  els["f-name"].value = "";
+  els["f-age"].value = "";
+  els["f-status"].value = "";
+  els["f-activity"].value = "-";
+  els["f-power"].value = "-";
+  els["f-family"].value = "-";
+  els["f-position"].value = "-";
+  els["f-gender"].value = "-";
+  els["f-photo"].value = "";
+  editingIndex = null;
+  document.getElementById("form-title").textContent = "3. Добавить персонажа";
+  document.getElementById("save-btn").textContent = "Добавить персонажа";
+  document.getElementById("cancel-edit-btn").style.display = "none";
+}
+
+function startEdit(index) {
+  const c = characters[index];
+  els["f-id"].value = c.id || "";
+  els["f-name"].value = c.name || "";
+  els["f-age"].value = c.age ?? "";
+  els["f-status"].value = c.status || "";
+  els["f-activity"].value = c.activity || "-";
+  els["f-power"].value = c.power || "-";
+  els["f-family"].value = c.family || "-";
+  els["f-position"].value = c.position || "-";
+  els["f-gender"].value = c.gender || "-";
+  els["f-photo"].value = c.photo || "";
+  editingIndex = index;
+  document.getElementById("form-title").textContent = `3. Редактирование: ${c.name}`;
+  document.getElementById("save-btn").textContent = "Сохранить изменения";
+  document.getElementById("cancel-edit-btn").style.display = "inline-block";
+  window.scrollTo({ top: document.getElementById("form-title").offsetTop - 20, behavior: "smooth" });
+}
+
+document.getElementById("cancel-edit-btn").addEventListener("click", resetForm);
+
+document.getElementById("save-btn").addEventListener("click", () => {
+  const name = els["f-name"].value.trim();
+  if (!name) { alert("Заполните имя персонажа"); return; }
+
+  const ageRaw = els["f-age"].value.trim();
+  const record = {
+    id: els["f-id"].value.trim(),
+    name,
+    age: ageRaw === "" ? null : Number(ageRaw),
+    status: els["f-status"].value.trim() || "-",
+    activity: els["f-activity"].value,
+    power: els["f-power"].value,
+    family: els["f-family"].value,
+    position: els["f-position"].value,
+    gender: els["f-gender"].value,
+    photo: els["f-photo"].value.trim()
+  };
+
+  if (editingIndex === null) {
+    characters.push(record);
+  } else {
+    characters[editingIndex] = record;
+  }
+  resetForm();
+  renderTable();
+});
+
+// ============================================================
+// Массовый импорт (тот же формат, что вы присылаете в чат)
+// ============================================================
+const LABELS = {
+  "имя": "name", "возраст": "age", "статус": "status", "активность": "activity",
+  "сила": "power", "бу": "power", "должность": "position", "пол": "gender"
+};
+
+function cleanSpace(s) { return (s || "").replace(/\s+/g, " ").trim(); }
+function parseAgeRaw(raw) {
+  if (!raw) return null;
+  const cleaned = raw.replace(/["'\t]/g, "").trim();
+  const num = parseFloat(cleaned.replace(",", "."));
+  return Number.isNaN(num) ? null : num;
+}
+function capitalize(s) {
+  if (!s) return s;
+  const low = s.toLowerCase();
+  return low.charAt(0).toUpperCase() + low.slice(1);
+}
+
+const GENDER_SUFFIX_RE = /\/\s*(кот|кошка)\s*$/i;
+const ID_RE = /\((\d*)\)\s*$/;
+const FAMILY_RE = /семьи\s+([^\s,]+)/i;
+const GENDER_ONLY_RE = /^(кот|кошка|кока)$/i;
+
+function parseBulkText(text) {
+  const lines = text.split(/\r?\n/);
+  const records = [];
+  let current = null;
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line) continue;
+    const m = line.match(/^([^:]+):\s*(.*)$/);
+    if (!m) continue;
+    const label = m[1].trim().toLowerCase();
+    const value = m[2].trim();
+    const key = LABELS[label];
+    if (!key) continue;
+
+    if (key === "name") {
+      if (current) records.push(current);
+      current = {};
+    }
+    if (!current) current = {};
+    // "Сила"/"БУ" оба маппятся на power — не перезаписываем случайно пустым
+    if (key === "power" && current[key] && !value) continue;
+    current[key] = value;
+  }
+  if (current) records.push(current);
+
+  const log = [];
+  const parsed = records.map(r => {
+    let name = cleanSpace(r.name);
+    let id = "";
+    const idMatch = name.match(ID_RE);
+    if (idMatch) {
+      id = idMatch[1] || "";
+      name = cleanSpace(name.replace(ID_RE, ""));
+    }
+
+    let genderRaw = r.gender ? cleanSpace(r.gender) : "";
+    if (!genderRaw) {
+      const gMatch = name.match(GENDER_SUFFIX_RE);
+      if (gMatch) {
+        genderRaw = gMatch[1];
+        name = cleanSpace(name.replace(GENDER_SUFFIX_RE, ""));
+      }
+    }
+
+    let positionRaw = cleanSpace(r.position || "");
+    let family = "-";
+    const famMatch = positionRaw.match(FAMILY_RE);
+    if (famMatch) {
+      const famGuess = capitalize(famMatch[1].replace(/[.,;]+$/, ""));
+      family = resolveEnum("family", famGuess);
+    }
+
+    // "Должность: кот/кошка" — на самом деле это пол, а не должность
+    if (!genderRaw && GENDER_ONLY_RE.test(positionRaw)) {
+      genderRaw = positionRaw;
+      positionRaw = "";
+    }
+
+    const activity = resolveEnum("activity", r.activity);
+    const power = resolveEnum("power", r.power);
+    const position = positionRaw ? resolveEnum("position", positionRaw) : "-";
+    const gender = genderRaw ? resolveEnum("gender", genderRaw) : "-";
+
+    if (r.activity && activity === "-") log.push({ level: "warn", text: `${name}: активность "${r.activity}" не распознана -> "-"` });
+    if (r.power && power === "-") log.push({ level: "warn", text: `${name}: БУ "${r.power}" не распознано -> "-"` });
+    if (positionRaw && position === "-") log.push({ level: "warn", text: `${name}: должность "${positionRaw}" не распознана -> "-"` });
+    if (genderRaw && gender === "-") log.push({ level: "warn", text: `${name}: пол "${genderRaw}" не распознан -> "-"` });
+
+    log.push({ level: "ok", text: `Добавлен: ${name}` });
+
+    return {
+      id,
+      name,
+      age: parseAgeRaw(r.age),
+      status: cleanSpace(r.status || "") || "-",
+      activity,
+      power,
+      family,
+      position,
+      gender,
+      photo: ""
+    };
+  });
+
+  return { parsed, log };
+}
+
+document.getElementById("bulk-parse-btn").addEventListener("click", () => {
+  const text = document.getElementById("bulk-input").value;
+  if (!text.trim()) { alert("Вставьте текст с персонажами"); return; }
+
+  const { parsed, log } = parseBulkText(text);
+  if (parsed.length === 0) {
+    alert("Не удалось распознать ни одного персонажа. Проверьте формат (должны быть строки вида \"Имя: ...\").");
+    return;
+  }
+
+  characters = characters.concat(parsed);
+  renderTable();
+
+  const logEl = document.getElementById("bulk-log");
+  logEl.style.display = "block";
+  logEl.innerHTML = log.map(l => `<span class="${l.level}">${l.level === "ok" ? "✓" : "⚠"} ${escapeHtml(l.text)}</span>`).join("\n");
+});
+
+document.getElementById("bulk-clear-btn").addEventListener("click", () => {
+  document.getElementById("bulk-input").value = "";
+  document.getElementById("bulk-log").style.display = "none";
+});
+
+// ============================================================
+// Загрузка существующего data.js
+// ============================================================
+document.getElementById("load-btn").addEventListener("click", () => {
+  document.getElementById("load-input").click();
+});
+
+document.getElementById("new-btn").addEventListener("click", () => {
+  if (characters.length && !confirm("Текущий список будет очищен. Продолжить?")) return;
+  characters = [];
+  renderTable();
+  document.getElementById("load-status").textContent = "Начат пустой список.";
+});
+
+document.getElementById("load-input").addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const text = reader.result;
+      const match = text.match(/const\s+characters\s*=\s*(\[[\s\S]*\])\s*;/);
+      if (!match) throw new Error("Не найден массив characters в файле");
+      const arr = new Function("return " + match[1])();
+      characters = arr;
+      renderTable();
+      document.getElementById("load-status").textContent = `Загружено персонажей: ${arr.length}`;
+    } catch (err) {
+      alert("Не удалось разобрать файл: " + err.message);
+    }
+  };
+  reader.readAsText(file, "utf-8");
+  e.target.value = "";
+});
+
+// ============================================================
+// Экспорт data.js
+// ============================================================
+function buildDataJs() {
+  function jsStr(s) { return JSON.stringify(s === null || s === undefined ? "" : s); }
+
+  const lines = characters.map(c => {
+    return "  {\n" +
+      "    id: " + jsStr(c.id) + ",\n" +
+      "    name: " + jsStr(c.name) + ",\n" +
+      "    age: " + (c.age === null || c.age === undefined || c.age === "" ? "null" : c.age) + ",\n" +
+      "    status: " + jsStr(c.status) + ",\n" +
+      "    activity: " + jsStr(c.activity) + ",\n" +
+      "    power: " + jsStr(c.power) + ",\n" +
+      "    family: " + jsStr(c.family) + ",\n" +
+      "    position: " + jsStr(c.position) + ",\n" +
+      "    gender: " + jsStr(c.gender) + ",\n" +
+      "    photo: " + jsStr(c.photo) + "\n" +
+      "  }";
+  });
+
+  const header = `// ============================================================
+// БАЗА ПЕРСОНАЖЕЙ
+// ------------------------------------------------------------
+// Этот файл сгенерирован редактором tools/editor.html.
+// Можно и дальше редактировать вручную, либо снова загрузить сюда
+// в редактор для правки через форму.
+//
+// ФОТО ПОДБИРАЕТСЯ АВТОМАТИЧЕСКИ ПО ID. Заполните поле "id" —
+// это игровой ID персонажа (айди игрока) — и положите файл с фото
+// в папку images/ под именем <id>.jpg (подойдёт и .jpeg/.png/.webp).
+//
+// Поле "photo" — ручное переопределение (путь к файлу или прямая
+// ссылка на изображение) для персонажей без id. Приоритетнее id.
+// ============================================================
+
+const characters = [
+`;
+  return header + lines.join(",\n") + "\n];\n";
+}
+
+document.getElementById("export-btn").addEventListener("click", () => {
+  if (!characters.length) { alert("Список персонажей пуст — нечего экспортировать"); return; }
+  const content = buildDataJs();
+  const blob = new Blob([content], { type: "text/javascript;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "data.js";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+// ============================================================
+// Инициализация
+// ============================================================
+resetForm();
+renderTable();
+</script>
+</body>
+</html>
